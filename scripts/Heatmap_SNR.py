@@ -34,7 +34,7 @@ data = data.dropna(subset=['snr', 'dist'])
 heatmap_data = data.pivot_table(index='dist', columns='time', values='snr')
 
 # Fill any remaining missing values (optional)
-heatmap_data = heatmap_data.fillna(method='ffill', axis=1).fillna(method='bfill', axis=1)
+heatmap_data = heatmap_data.ffill(axis=1).bfill(axis=1)
 
 # Plot the heatmap
 plt.figure(figsize=(12, 8))
