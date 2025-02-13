@@ -1,4 +1,4 @@
-### GAN Channel Modeling for UAV-to-Ground Communication
+### LTSM-GAN Channel Modeling for UAV-to-Ground CommunicationS
 
 ---
 
@@ -9,27 +9,30 @@
 
 ### **Problem Statement**
 
-The AERPAW digital twin requires accurate wireless channel
-models to simulate UAV-to-ground communication in
-mobility-driven scenarios. Current statistical models, such
-as the 3GPP RMa or Two-Ray Ground Reflection models,
-lack the flexibility to adapt to the dynamic and environment-specific
-conditions of UAV operations, such as varying altitudes,
-Doppler shifts, and multipath effects.
+Accurate wireless channel measurements are essential for
+the AERPAW digital twin to realistically simulate UAV-
+to-ground communication in dynamic, mobility-driven en-
+vironments. However, collecting real-world channel mea-
+surements is often time-consuming, resource-intensive, and
+challenging due to the need for extensive field testing under
+varying environmental conditions. While statistical models,
+such as Two-Ray Ground Reflection models, can simulate
+channel behavior, they lack the flexibility to capture the
+complex, environment-specific conditions of UAV operations.
+These models often fail to reflect the variability introduced
+by changing altitudes, rapid Doppler shifts, and intricate mul-
+tipath propagation effects, limiting their ability to represent
+the true dynamics of UAV communication channels.
 
 ---
 
 ### **Proposed Solution**
 
-Generative Adversarial Networks (GANs) can be employed
-to enhance these models by generating context-aware parameters 
-(e.g., path loss exponents, Rician K-factors, or shadowing
-coefficients) that dynamically adapt to UAV-specific conditions.
-By leveraging the dataset provided, which includes
-metrics such as CIR, path loss, and Doppler shift, the GAN
-can learn patterns unique to UAV channels, offering more
-realistic and granular insights to improve the digital twin’s
-fidelity.
+To address these limitations, we will employ a Generative Adversarial Network (GAN) to create high-quality synthetic channel measurements. By integrating a Long Short-Term Memory (LSTM) network within the GAN architecture, we can effectively model the temporal dependencies present in our collected time-series UAV-to-ground communication data. Leveraging metrics such as Signal-to-Noise Ratio (SNR), path loss, and the angles of arrival and departure, the GAN will learn patterns unique to UAV channels, producing realistic and context-aware synthetic data. This approach will enhance the fidelity of the digital twin, offering more granular insights into UAV-specific communication scenarios .
+
+
+<img src="/diagram.png">
+
 
 ---
 
