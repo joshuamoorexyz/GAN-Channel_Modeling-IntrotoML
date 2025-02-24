@@ -4,3 +4,4 @@ numpy
 pandas
 geopy
 torch
+scikit-learn
