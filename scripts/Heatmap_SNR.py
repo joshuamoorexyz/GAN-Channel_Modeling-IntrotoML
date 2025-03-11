@@ -37,7 +37,7 @@ heatmap_data = data.pivot_table(index='dist', columns='time', values='snr')
 heatmap_data = heatmap_data.ffill(axis=1).bfill(axis=1)
 
 # Plot the heatmap
-plt.figure(figsize=(12, 8))
+plt.figure(figsize=(8, 8))
 sns.heatmap(heatmap_data, cmap='viridis', cbar_kws={'label': 'SNR (dB)'})
 plt.title('SNR Heatmap Over Time and Distance')
 plt.xlabel('Time Index')
