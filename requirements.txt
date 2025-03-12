@@ -5,3 +5,4 @@ pandas
 geopy
 torch
 scikit-learn
+torchvision
