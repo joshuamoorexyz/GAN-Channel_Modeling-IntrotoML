@@ -4,7 +4,7 @@ import seaborn as sns
 import numpy as np
 
 # Load the data (adjust the filename if needed)
-data = pd.read_csv('dataset/2023-12-15_15_41-results.csv')
+data = pd.read_csv('../dataset/2023-12-15_16_53-results.csv')
 
 # Ensure time is sorted
 data = data.sort_values(by='time')
@@ -37,13 +37,14 @@ heatmap_data = data.pivot_table(index='dist', columns='time', values='snr')
 heatmap_data = heatmap_data.ffill(axis=1).bfill(axis=1)
 
 # Plot the heatmap
-plt.figure(figsize=(8, 8))
-sns.heatmap(heatmap_data, cmap='viridis', cbar_kws={'label': 'SNR (dB)'})
-plt.title('SNR Heatmap Over Time and Distance')
-plt.xlabel('Time Index')
-plt.ylabel('Distance (m)')
+plt.figure(figsize=(10, 10))
+sns.heatmap(heatmap_data, cmap='viridis', cbar=False, xticklabels=False, yticklabels=False, cbar_kws={'label': 'SNR (dB)'})
+plt.axis('off')
+# plt.title('SNR Heatmap Over Time and Distance')
+# plt.xlabel('Time Index')
+# plt.ylabel('Distance (m)')
 
 # Save the heatmap as an image
-plt.savefig('snr_heatmap.png')
+plt.savefig('2023-12-15_16_53.png', bbox_inches='tight', pad_inches=0, dpi=300)
 plt.show()
 
