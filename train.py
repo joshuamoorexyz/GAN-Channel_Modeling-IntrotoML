@@ -8,12 +8,9 @@ import ast
 from torch.utils.data import DataLoader, TensorDataset
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(DEVICE)
+print(f"Using device: {DEVICE}")
 
 # Load CSV Data
-def parse_array(column):
-    return column.apply(lambda x: np.array(ast.literal_eval(x)) if isinstance(x, str) else x)
-
 def load_multiple_csvs(directory, features):
     dataframes = []
     for file in os.listdir(directory):
@@ -24,63 +21,69 @@ def load_multiple_csvs(directory, features):
     return combined_df
 
 # Define feature columns
-features = ['center_freq', 'dist', 'h_dist', 'v_dist', 'avgPower', 'avgSnr',
+features = ['time', 'center_freq', 'dist', 'h_dist', 'v_dist', 'avgPower', 'avgSnr',
             'freq_offset', 'avg_pl', 'aod_theta', 'aoa_theta', 'aoa_phi',
-            'pitch', 'yaw', 'roll', 'vel_x', 'vel_y', 'vel_z', 'speed', 'avg_pl_rolling', 'avg_pl_ewma']
+            'pitch', 'yaw', 'roll', 'vel_x', 'vel_y', 'vel_z', 'speed', 
+            'avg_pl_rolling', 'avg_pl_ewma']
 
-# Load all CSVs in the dataset directory
+# Load dataset
 df = load_multiple_csvs("dataset/", features)
+df.fillna(0, inplace=True)  # Handle NaNs
 
-# Handle NaNs
-df.fillna(0, inplace=True)
+# Save min and max values for later denormalization
+original_min = df.min()
+original_max = df.max()
+np.save("original_min.npy", original_min.values)
+np.save("original_max.npy", original_max.values)
+print("Saved min and max values for denormalization.")
 
-# Normalize the data
-def normalize_data(df):
-    return (df - df.min()) / (df.max() - df.min()).replace(0, 1)  # Avoid division by zero
-df = normalize_data(df)
+# Normalize data
+def normalize_data(df, min_vals, max_vals):
+    return (df - min_vals) / (max_vals - min_vals + 1e-8)  # Avoid division by zero
 
-labels = np.ones(len(df))
+df = normalize_data(df, original_min, original_max)
 
-# Convert to PyTorch tensors
-X = torch.tensor(df.values, dtype=torch.float32)
-y = torch.tensor(labels, dtype=torch.float32).view(-1, 1)
+# Convert data into sequences (e.g., 50-timestep windows)
+sequence_length = 50  # Adjust based on UAV flight duration
+X_sequences = []
+
+for i in range(len(df) - sequence_length):
+    X_sequences.append(df.iloc[i:i + sequence_length].values)
+
+X = torch.tensor(np.array(X_sequences), dtype=torch.float32)
+y = torch.ones(X.shape[0], 1)  # Labels set to ones (for future use)
 
 dataset = TensorDataset(X, y)
-dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
+dataloader = DataLoader(dataset, batch_size=32, shuffle=False)  # No shuffling to maintain sequence order
 
-# Define GAN Generator and Discriminator
+# Define LSTM-based Generator
 class Generator(nn.Module):
-    def __init__(self, input_size, output_size):
+    def __init__(self, input_size, output_size, hidden_dim=128, num_layers=2):
         super(Generator, self).__init__()
-        self.model = nn.Sequential(
-            nn.Linear(input_size, 64),
-            nn.ReLU(),
-            nn.Linear(64, 128),
-            nn.ReLU(),
-            nn.Linear(128, output_size),
-            nn.Tanh()
-        )
-    
+        self.lstm = nn.LSTM(input_size, hidden_dim, num_layers, batch_first=True)
+        self.fc = nn.Linear(hidden_dim, output_size)
+        self.tanh = nn.Tanh()
+
     def forward(self, z):
-        return self.model(z)
+        lstm_out, _ = self.lstm(z)
+        output = self.fc(lstm_out)
+        return self.tanh(output)
 
+# Define LSTM-based Discriminator
 class Discriminator(nn.Module):
-    def __init__(self, input_size):
+    def __init__(self, input_size, hidden_dim=128, num_layers=2):
         super(Discriminator, self).__init__()
-        self.model = nn.Sequential(
-            nn.Linear(input_size, 128),
-            nn.ReLU(),
-            nn.Linear(128, 64),
-            nn.ReLU(),
-            nn.Linear(64, 1),
-            nn.Sigmoid()
-        )
-    
-    def forward(self, x):
-        return self.model(x)
+        self.lstm = nn.LSTM(input_size, hidden_dim, num_layers, batch_first=True)
+        self.fc = nn.Linear(hidden_dim, 1)
+        self.sigmoid = nn.Sigmoid()
 
-# GAN Training
-def train_gan(generator, discriminator, dataloader, epochs=50000):
+    def forward(self, x):
+        lstm_out, _ = self.lstm(x)
+        output = self.fc(lstm_out[:, -1, :])  # Use the last LSTM output
+        return self.sigmoid(output)
+
+# GAN Training Function
+def train_gan(generator, discriminator, dataloader, epochs=4000):
     criterion = nn.BCELoss()
     optimizer_G = optim.Adam(generator.parameters(), lr=0.001)
     optimizer_D = optim.Adam(discriminator.parameters(), lr=0.001)
@@ -89,20 +92,18 @@ def train_gan(generator, discriminator, dataloader, epochs=50000):
         for real_data, _ in dataloader:
             batch_size = real_data.size(0)
 
-            real_labels = torch.ones(batch_size, 1).to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
-            fake_labels = torch.zeros(batch_size, 1).to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+            real_data = real_data.to(DEVICE)
+            real_labels = torch.ones(batch_size, 1).to(DEVICE)
+            fake_labels = torch.zeros(batch_size, 1).to(DEVICE)
 
-            # Train discriminator against real data
+            # Train Discriminator
             optimizer_D.zero_grad()
-            outputs = discriminator(real_data.to(DEVICE))
+            outputs = discriminator(real_data)
             loss_real = criterion(outputs, real_labels)
 
-            # Random noise
-            z = torch.randn(batch_size, len(features)).to(DEVICE)
-            # Generate fake data
+            z = torch.randn(batch_size, sequence_length, len(features)).to(DEVICE)  # Generate time-dependent noise
             fake_data = generator(z)
 
-            # Discriminate fake data
             outputs = discriminator(fake_data.detach())
             loss_fake = criterion(outputs, fake_labels)
 
@@ -117,17 +118,15 @@ def train_gan(generator, discriminator, dataloader, epochs=50000):
             loss_G.backward()
             optimizer_G.step()
         
-        print(f"Epoch {epoch+1}, D Loss: {loss_D.item():.4f}, G Loss: {loss_G.item():.4f}")
-
+        if epoch % 50 == 0:  # Print loss every 50 epochs
+            print(f"Epoch {epoch+1}/{epochs}, D Loss: {loss_D.item():.4f}, G Loss: {loss_G.item():.4f}")
 
 # Initialize and train GAN
-generator = Generator(input_size=len(features), output_size=len(features)).to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
-discriminator = Discriminator(input_size=len(features)).to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+generator = Generator(input_size=len(features), output_size=len(features)).to(DEVICE)
+discriminator = Discriminator(input_size=len(features)).to(DEVICE)
 train_gan(generator, discriminator, dataloader)
 
-torch.save(discriminator.state_dict(), "discriminatorcheckpoint.pth")        
-torch.save(generator.state_dict(), "generatorcheckpoint.pth")        
-
-print("Saved models checkpoint")
-print(f"Number of Features in Training: {len(features)}")
+torch.save(generator.state_dict(), "generatorcheckpoint.pth")
+torch.save(discriminator.state_dict(), "discriminatorcheckpoint.pth")
+print("Saved model checkpoints.")
 
