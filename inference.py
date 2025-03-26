@@ -28,7 +28,7 @@ def denormalize_data(generated_data, original_min, original_max):
     return (generated_data + 1) / 2 * (original_max - original_min) + original_min
 
 # Generate synthetic time-series data
-def generate_data(generator, num_samples=100, sequence_length=50, input_size=21, device="cpu"):
+def generate_data(generator, num_samples=100, sequence_length=50, input_size=20, device="cpu"):
     noise = torch.randn(num_samples, sequence_length, input_size, device=device)  # Now using LSTM input format
     with torch.no_grad():
         generated_data = generator(noise).cpu().numpy()
@@ -36,7 +36,7 @@ def generate_data(generator, num_samples=100, sequence_length=50, input_size=21,
 
 # Save generated data to CSV with feature names
 def save_to_csv(data, filename="generated_data.csv"):
-    features = ['time', 'center_freq', 'dist', 'h_dist', 'v_dist', 'avgPower', 'avgSnr',
+    features = ['center_freq', 'dist', 'h_dist', 'v_dist', 'avgPower', 'avgSnr',
                 'freq_offset', 'avg_pl', 'aod_theta', 'aoa_theta', 'aoa_phi',
                 'pitch', 'yaw', 'roll', 'vel_x', 'vel_y', 'vel_z', 'speed', 
                 'avg_pl_rolling', 'avg_pl_ewma']
@@ -53,8 +53,8 @@ if __name__ == "__main__":
     model_path = "generatorcheckpoint.pth"
     num_samples = 100
     sequence_length = 50  # Must match training
-    input_size = 21
-    output_size = 21
+    input_size = 20
+    output_size = 20
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # Load original min/max values used during training
