@@ -13,8 +13,7 @@ os.makedirs(output_dir, exist_ok=True)
 start_time = time.time()
 
 #Target features
-features = ['center_freq', 'dist', 'h_dist', 'v_dist', 'avgPower', 'avgSnr', 'freq_offset', 'avg_pl', 'aod_theta',
-            'aoa_theta', 'aoa_phi', 'pitch', 'yaw', 'roll', 'vel_x', 'vel_y', 'vel_z', 'speed', 'avg_pl_rolling', 'avg_pl_ewma']
+features = ['time', 'center_freq', 'dist', 'h_dist', 'v_dist', 'avgPower', 'snr', 'avgSnr', 'freq_offset', 'path_loss', 'avg_pl', ]
 
 #For all .csv files in sourceDir
 for file in os.listdir(source_dir):
