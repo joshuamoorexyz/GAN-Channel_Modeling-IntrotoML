@@ -9,7 +9,7 @@ from math import ceil
 #Start executable
 
 source_dir = "./dataset/reduced_only_full/"
-output_dir = "./Figures/SNR_v_h_dist/"
+output_dir = "./Figures/SNR_v_h_dist/V/"
 chunk_size = 20000 #Take everything at the moment, but may want to do it in smaller batchess later
 
 for file in os.listdir(source_dir):
@@ -44,9 +44,12 @@ for file in os.listdir(source_dir):
             #h_dist: 30 to 460
 
             plt.figure(figsize=(10, 10))
-            plt.scatter(df_chunk['h_dist'], df_chunk['snr'], alpha=0.5, s=1)
+            plt.scatter(df_chunk['h_dist'], df_chunk['avgSnr'], alpha=0.5, s=1)
+            plt.ylim(-19, -4)
+            plt.xlim(right=100)
+            print(df_chunk['v_dist'].describe())
             plt.axis('off')
-            plt.savefig(output_filename, bbox_inches='tight', pad_inches=0, dpi=300)
+            plt.savefig(results_target, bbox_inches='tight', pad_inches=0, dpi=300)
             plt.close()
 
             print(f"Chunk {i+1} visualization saved for {file}!")
