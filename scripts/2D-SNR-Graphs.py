@@ -4,10 +4,6 @@ import os
 from math import ceil
 
 
-
-
-#Start executable
-
 source_dir = "./dataset/reduced_only_full/"
 output_dir = "./Figures/SNR_v_h_dist/V/"
 chunk_size = 20000 #Take everything at the moment, but may want to do it in smaller batchess later
@@ -21,9 +17,6 @@ for file in os.listdir(source_dir):
 
         #Sorted by time
         df = df.sort_values(by='time')
-        # df['snr'] = df['snr'].apply(process_snr)
-        # df['snr'] = pd.to_numeric(df['snr'], errors='coerce')
-        
 
         #Base target for writing for results from this file
         output_filename = file.replace(".csv", "")
@@ -43,11 +36,12 @@ for file in os.listdir(source_dir):
             #v_dist: 0 to 100
             #h_dist: 30 to 460
 
+            #Darkmode if desired
+            #plt.style.use('dark_background')
             plt.figure(figsize=(10, 10))
-            plt.scatter(df_chunk['h_dist'], df_chunk['avgSnr'], alpha=0.5, s=1)
+            plt.scatter(df_chunk['v_dist'], df_chunk['avgSnr'], alpha=0.9, s=1)
             plt.ylim(-19, -4)
             plt.xlim(right=100)
-            print(df_chunk['v_dist'].describe())
             plt.axis('off')
             plt.savefig(results_target, bbox_inches='tight', pad_inches=0, dpi=300)
             plt.close()
