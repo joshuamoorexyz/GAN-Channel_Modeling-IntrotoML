@@ -1,46 +1,79 @@
-### LTSM-GAN Channel Modeling for UAV-to-Ground Communications
+# Textual GAN for Wireless Channel Modeling
 
----
+### Description:
+(Needs to be completed)
 
-### **Project Title**
-**Enhancing UAV-to-Ground Channel Modeling for AERPAW Digital Twin Using Generative Adversarial Networks**
+### Model Architecture
 
----
+**Discriminator (Critic):**  
+The discriminator (critic) uses a Conv1D with four layers (64→128→256→512 channels) with batch normalization, PReLU activations, and dropout. Target features are processed through global average pooling before a final linear layer outputs a score. Unlike traditional discriminators, it omits sigmoid/tanh for Wasserstein-GAN compatibility.
+<p align="center">
+  <img src="images/discriminator.png" width="85%" height="85%">
+  <br><em>Fig: Discriminator model</em>
+</p>
 
-### **Problem Statement**
+**Generator:**  
+The generator processes a combined input of noise and flight condition features through an LSTM layer, followed by three Conv1D blocks (128→64→1 channels) with batch normalization and PReLU activations. Using kernel size 3 with padding, it preserves the 1000-step sequence length, while Tanh activation outputs normalized channel measurements (such as average path loss or SNR).
+<p align="center">
+  <img src="images/generator.png" width="85%" height="85%">
+  <br><em>Fig: Generator model</em>
+</p>
 
-Accurate wireless channel measurements are essential for
-the AERPAW digital twin to realistically simulate UAV-to-ground
-communication in dynamic, mobility-driven environments.
-However, collecting real-world channel measurements is often
-time-consuming, resource-intensive, and
-challenging due to the need for extensive field testing under
-varying environmental conditions. While statistical models,
-such as Two-Ray Ground Reflection models, can simulate
-channel behavior, they lack the flexibility to capture the
-complex, environment-specific conditions of UAV operations.
-These models often fail to reflect the variability introduced
-by changing altitudes, rapid Doppler shifts, and intricate multipath
-propagation effects, limiting their ability to represent
-the true dynamics of UAV communication channels.
+### Example Results
 
----
+#### Generated vs Real Channel Measurements
+<p align="center">
+  <img src="images/real_vs_generated_avgSnr.png" width="85%" height="85%">
+  <br><em>Fig 1: Comparison of real vs generated SNR values</em>
+</p>
 
-### **Proposed Solution**
+<p align="center">
+  <img src="images/real_vs_generated_avg_pl.png" width="85%" height="85%">
+  <br><em>Fig 2: Comparison of real vs generated path loss values</em>
+</p>
 
-To address these limitations, we will employ a Generative Adversarial Network (GAN) to create high-quality synthetic channel measurements. By integrating a Long Short-Term Memory (LSTM) network within the GAN architecture, we can effectively model the temporal dependencies present in our collected time-series UAV-to-ground communication data. Leveraging metrics such as Signal-to-Noise Ratio (SNR), path loss, and the angles of arrival and departure, the GAN will learn patterns unique to UAV channels, producing realistic and context-aware synthetic data. This approach will enhance the fidelity of the digital twin, offering more granular insights into UAV-specific communication scenarios.
+#### Training Metrics
+<p align="center">
+  <img src="images/wgan_gp_conditional_loss_plot_avg_pl.png" width="85%" height="85%">
+  <br><em>Fig 3: WGAN-GP conditional training loss progression</em>
+</p>
 
 
-<img src="/diagram.png">
+### Usage:
 
+> [!NOTE]  
+> Running the model in a virtual environment is recommended!
 
----
+```bash
+python3 -m venv textgan
+source textgan/bin/activate
+pip install -r requirements.txt
+```
 
-### **Team Members**
+1. Training the model:
+   
+```bash
+python train.py
+```
 
-| Name                | netID   | GitHub                                                                                  |
-|---------------------|---------|-----------------------------------------------------------------------------------------|
-| **Joshua Moore**    | jjm702  | [![GitHub](https://skillicons.dev/icons?i=github)](https://github.com/joshuamoorexyz)   |
-| **Tirian Judy**     | tkj105  | [![GitHub](https://skillicons.dev/icons?i=github)](https://github.com/Tirian33)        |
-| **Aayam Raj Shakya**| as5160  | [![GitHub](https://skillicons.dev/icons?i=github)](https://github.com/aayamrajshakya)  |
-| **Claire Johnson**  | kj1289  | [![GitHub](https://skillicons.dev/icons?i=github)](https://github.com/clairejohnson0714)  |
+**Command Line Arguments:**
+
+```console
+josh@msu:/home/TextGAN-Channel-Modeling$ python train.py --help
+usage: train.py [-h] [--lr LR] [--num_epochs NUM_EPOCHS]
+                [--target {avg_pl,avgSnr}]
+
+options:
+  -h, --help               show this help message and exit
+  --lr LR                  The learning rate to use for training (Default: 1e-4)
+  --num_epochs NUM_EPOCHS  The number of epochs to train the model (Default: 402)
+  --target {avg_pl,avgSnr} The feature that we want to generate (Default: 'avgSnr')
+```
+
+2. Inferencing the model:
+   
+To inference the trained model and generate a csv of output data, run:
+
+```bash
+python inference.py
+```
