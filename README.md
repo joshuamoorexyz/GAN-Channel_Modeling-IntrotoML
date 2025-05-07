@@ -1,7 +1,7 @@
-# Textual GAN for Wireless Channel Modeling
+# Textual GAN for Wireless Channel Modeling - CSE 4/6693
 
 ### Description:
-(Needs to be completed)
+This is a Wasserstein GAN created to produce synthetic UAV channel data. This is the version of the model produced for CSE 4693 / 6693.
 
 ### Model Architecture
 
@@ -59,15 +59,13 @@ python train.py
 **Command Line Arguments:**
 
 ```console
-josh@msu:/home/TextGAN-Channel-Modeling$ python train.py --help
+user@user:/home/GAN-Channel_Modeling-IntrotoML$ python train.py --help
 usage: train.py [-h] [--lr LR] [--num_epochs NUM_EPOCHS]
-                [--target {avg_pl,avgSnr}]
 
 options:
   -h, --help               show this help message and exit
   --lr LR                  The learning rate to use for training (Default: 1e-4)
   --num_epochs NUM_EPOCHS  The number of epochs to train the model (Default: 402)
-  --target {avg_pl,avgSnr} The feature that we want to generate (Default: 'avgSnr')
 ```
 
 2. Inferencing the model:
